@@ -1,0 +1,32 @@
+{
+  "name": "web-privacy-disqus",
+  "version": "1.0.0",
+  "description": "Cleanse your comment-history automatically and regularly.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/josteink/web-privacy-disqus.git"
+  },
+  "keywords": [
+    "privacy",
+    "disqus"
+  ],
+  "author": "Jostein Kjønigsen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/josteink/web-privacy-disqus/issues"
+  },
+  "homepage": "https://github.com/josteink/web-privacy-disqus",
+  "dependencies": {
+    "express": "^4.12.4",
+    "oauth": "^0.9.14"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-cli": "^0.1.13",
+    "grunt-jslint": "^1.1.14"
+  }
+}
