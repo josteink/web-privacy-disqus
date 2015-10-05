@@ -1,0 +1,5 @@
+{
+    "appKey":"--your appKey here--",
+    "appSecret":"--your appSecret here--",
+    "port":8800
+}
