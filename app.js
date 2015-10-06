@@ -51,6 +51,7 @@ app.get('/', function (req, res) {
         scope: ['read,write'],
         state: 'some random string to protect against cross-site request forgery attacks'
     });
+    authUrl += "&response_type=code";
 
     return res.send('<h1>Please log in to Disqus</h1><p><a href="' + authUrl + '">Login</a>');
 });
