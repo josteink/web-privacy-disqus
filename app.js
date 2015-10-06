@@ -11,8 +11,13 @@ var OAuth2 = require("oauth").OAuth2;
 // configuration
 
 var load_config = function () {
-    var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-    return config;
+    try {
+      var config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
+      return config;
+    }
+    catch (error) {
+        return null;
+    }
 };
 
 var save_config = function (config) {
@@ -20,7 +25,13 @@ var save_config = function (config) {
     fs.writeFileSync('config.json', text, 'utf8');
 };
 
-var config = load_config();
+var config = load_config() || {
+    "appKey":"--your appKey here--",
+    "appSecret":"--your appSecret here--",
+    "port":8800
+};
+// ensure template config gets written to disk.
+save_config(config);
 
 // prepare objects
 
