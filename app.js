@@ -78,6 +78,7 @@ app.get(authPage, function (req, res) {
                 return res.end(JSON.stringify(results));
             }
             else {
+                config.access_token = access_token;
                 config.refresh_token = refresh_token;
                 save_config(config);
 
@@ -148,7 +149,25 @@ if (config.refresh_token === undefined) {
         console.log('Please go to the following URL to configure the app: ' + appUrl);
     });
 } else {
-    reddit.refresh(config.refresh_token).then(function () {
-        runApp();
-    });
+    oauth2.getOAuthAccessToken(
+        config.refresh_token,
+        {
+            'redirect_uri': callbackUrl,
+            'grant_type' : 'refresh_token',
+            'code': config.refresh_token
+        },
+        function (e, access_token, refresh_token, results){
+            if (e) {
+                console.log(e);
+            } else if (results.error) {
+                console.log(results);
+            } else {
+                config.access_token = access_token;
+                save_config(config);
+
+                console.log('Obtained access-tokens: ', access_token);
+
+                runApp();
+            }
+        });
 }
