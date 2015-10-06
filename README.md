@@ -72,7 +72,7 @@ npm install
 nano config.json
 
 # run application
-node index.js
+node app.js
 ````
 
 After that, the application should be running in a unconfigured
