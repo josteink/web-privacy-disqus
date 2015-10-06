@@ -32,38 +32,46 @@ var callbackUrl = appUrl + authPage;
 // https://github.com/ciaranj/node-oauth/blob/master/examples/github-example.js
 var oauth2 = new OAuth2(
     config.appKey,
-    config.appSecrect,
+    config.appSecret,
     'https://disqus.com/',
     'api/oauth/2.0/authorize/',
     'api/oauth/2.0/access_token/',
-    null
+    {
+        'response_type': 'code'
+    }
 );
-
-var authURL = oauth2.getAuthorizeUrl({
-    redirect_uri: callbackUrl,
-    scope: ['read,write'],
-    state: 'some random string to protect against cross-site request forgery attacks'
-});
 
 var pollInterval = 60000;
 
 // configuration pages, for first time running of application.
 
 app.get('/', function (req, res) {
-    return res.send('<h1>Please log in to Disqus</h1><p><a href="' + reddit.getAuthUrl() + '">Login</a>');
+    var authUrl = oauth2.getAuthorizeUrl({
+        redirect_uri: callbackUrl,
+        scope: ['read,write'],
+        state: 'some random string to protect against cross-site request forgery attacks'
+    });
+
+    return res.send('<h1>Please log in to Disqus</h1><p><a href="' + authUrl + '">Login</a>');
 });
 
 // does not account for hitting "deny" / etc. Assumes that
 // the user has pressed "allow"
 app.get(authPage, function (req, res) {
 
+    var code = req.query.code;
+    console.log(code);
     return oauth2.getOAuthAccessToken(
-        req.query.code,
-        {'redirect_uri': callbackUrl },
+        code,
+        {
+            'redirect_uri': callbackUrl,
+            'grant_type' : 'authorization_code',
+            'code': code
+        },
         function (e, access_token, refresh_token, results){
             if (e) {
                 console.log(e);
-                return res.end(e);
+                return res.end(JSON.stringify(e));
             } else if (results.error) {
                 console.log(results);
                 return res.end(JSON.stringify(results));
