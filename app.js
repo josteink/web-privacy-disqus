@@ -27,19 +27,6 @@ var callbackUrl = appUrl + authPage;
 var Disqus = require("./oauth-disqus").disqus;
 var disqus = new Disqus(config.appKey,config.appSecret,callbackUrl);
 
-// based on template from
-// https://github.com/ciaranj/node-oauth/blob/master/examples/github-example.js
-var oauth2 = new OAuth2(
-    config.appKey,
-    config.appSecret,
-    'https://disqus.com/',
-    'api/oauth/2.0/authorize/',
-    'api/oauth/2.0/access_token/',
-    {
-        'response_type': 'code'
-    }
-);
-
 var pollInterval = 60000;
 
 // configuration pages, for first time running of application.
@@ -55,32 +42,9 @@ app.get(authPage, function (req, res) {
 
     var code = req.query.code;
     console.log(code);
-    return oauth2.getOAuthAccessToken(
-        code,
-        {
-            'redirect_uri': callbackUrl,
-            'grant_type' : 'authorization_code',
-            'code': code
-        },
-        function (e, access_token, refresh_token, results){
-            if (e) {
-                console.log(e);
-                return res.end(JSON.stringify(e));
-            } else if (results.error) {
-                console.log(results);
-                return res.end(JSON.stringify(results));
-            }
-            else {
-                config.access_token = access_token;
-                config.refresh_token = refresh_token;
-                configProvider.save(config);
-
-                console.log('Obtained access-tokens: ', access_token);
-                console.log('Obtained refresh-tokens: ', refresh_token);
-
-                return res.redirect('/done');
-            }
-        });
+    return disqus.getTokensFromCode(code, combine(handleAuthResult, function() {
+        res.redirect("/done");
+    }));
 });
 
 app.get('/done', function (req, res) {
@@ -89,6 +53,35 @@ app.get('/done', function (req, res) {
 });
 
 // actual application-logic
+
+function handleAuthResult(error, response, body) {
+    if (error) {
+        console.log(error);
+    } else {
+        var obj = JSON.parse(body);
+        console.log(obj);
+        if (obj.error)
+        {
+            throw Error(obj);
+        }
+
+        // requesting new access-token invalidates previous
+        // refresh token so we must save the new one!
+        config.refresh_token = obj.refresh_token;
+        config.access_token = obj.access_token;
+        configProvider.save(config);
+        
+        // we should always start the main app-loop once authenticated
+        runApp();
+    }
+}
+
+function combine(f1, f2) {
+    return function() {
+        f1.apply(f1, arguments);
+        f2.apply(f2, arguments);
+    };
+}
 
 function errorHandler(err) {
     console.log("Error sending request to reddit:");
@@ -142,23 +135,5 @@ if (config.refresh_token === undefined) {
         console.log('Please go to the following URL to configure the app: ' + appUrl);
     });
 } else {
-    disqus.refresh(config.refresh_token,
-                   function (error, response, body) {
-                       if (error) {
-                           console.log(error);
-                       } else {
-                           var obj = JSON.parse(body);
-                           console.log(obj);
-                           if (!obj.error)
-                           {
-                               // requesting new access-token invalidates previous
-                               // refresh token so we must save the new one!
-                               config.refresh_token = obj.refresh_token;
-                               config.access_token = obj.access_token;
-                               configProvider.save(config);
-                               
-                               runApp();
-                           }
-                       }
-                   });
+    disqus.refresh(config.refresh_token, handleAuthResult);
 }
