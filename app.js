@@ -6,8 +6,6 @@ var cookieParser = require('cookie-parser');
 var app = express();
 app.use(cookieParser());
 
-var OAuth2 = require("oauth").OAuth2;
-
 // configuration
 
 var Config = require("./config").config;
@@ -54,26 +52,14 @@ app.get('/done', function (req, res) {
 
 // actual application-logic
 
-function handleAuthResult(error, response, body) {
-    if (error) {
-        console.log(error);
-    } else {
-        var obj = JSON.parse(body);
-        console.log(obj);
-        if (obj.error)
-        {
-            throw Error(obj);
-        }
+function handleAuthResult(refreshToken) {
+    // requesting new access-token invalidates previous
+    // refresh token so we must save the new one!
+    config.refresh_token = refreshToken;
+    configProvider.save(config);
 
-        // requesting new access-token invalidates previous
-        // refresh token so we must save the new one!
-        config.refresh_token = obj.refresh_token;
-        config.access_token = obj.access_token;
-        configProvider.save(config);
-        
-        // we should always start the main app-loop once authenticated
-        runApp();
-    }
+    // we should always start the main app-loop once authenticated
+    runApp();
 }
 
 function combine(f1, f2) {
@@ -88,10 +74,6 @@ function errorHandler(err) {
     console.log(err);
     console.log("Retrying later.");
     scheduleLoop();
-}
-
-function getUserName() {
-    throw Error("Not implemented!");
 }
 
 function getLastCommentToKeep(user, numToKeep) {
@@ -122,7 +104,7 @@ function runLoop() {
 
 function runApp() {
     // Print out stats about the user, that's it.
-    getUserName().then(function (me) {
+    disqus.getUserName().then(function (me) {
         user = me;
         return runLoop();
     });
