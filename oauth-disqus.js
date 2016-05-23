@@ -93,8 +93,24 @@ var disqus = function(appKey, appSecret, callbackUrl) {
 
     };
 
-    self.get = function(url, options, callback) {
-        // TODO: wrap req.get with auth-headers
+    self.get = function(url, callback) {
+        if (url.indexOf("?") != -1) {
+            url += "&"
+        } else {
+            url += "?"
+        }
+        url += "api_key=" + appKey;
+
+        var options = {
+            'auth': {
+                'bearer': self.accessToken
+            }
+        };
+
+        return req.get(url, options, function(error, response, body) {
+            handleAuthenticationResult(error, response, body);
+            callback(body);
+        });
     };
 
     self.post = function(url, options, callback) {

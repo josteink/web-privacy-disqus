@@ -76,8 +76,14 @@ function errorHandler(err) {
     scheduleLoop();
 }
 
-function getLastCommentToKeep(user, numToKeep) {
-    throw Error("Not implemented!");
+function getLastCommentToKeep(user, numToKeep, callback) {
+    // list of comments here https://disqus.com/api/3.0/users/listPosts.json
+    // docs here: https://disqus.com/api/docs/users/listPosts/
+
+    return disqus.get("https://disqus.com/api/3.0/users/listPosts.json", function(res) {
+        console.log(res);
+        callback(null);
+    });
 }
 
 function deleteCommentsFromEntity(comments) {
@@ -97,7 +103,7 @@ function scheduleLoop() {
 }
 
 function runLoop() {
-    return getLastCommentToKeep(user, 100).then(function (lastId) {
+    return getLastCommentToKeep(user, 100, function (lastId) {
         return deleteComments(user, lastId);
     });
 }
