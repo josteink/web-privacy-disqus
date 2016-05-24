@@ -19,16 +19,11 @@ account's history which probably no longer holds any value.
 
 This is a simple module/experiment written in NodeJS to see how that
 works out. Depending on how it turns out it may become a part of a bigger suite
-of web-privacy related tools (Facebook, Reddit, etc)
+of web-privacy related tools (Facebook, [Reddit](https://github.com/josteink/web-privacy-reddit), etc).
 
 ## Features
 
 * Automatically delete old-posts
-
-### Planned features
-
-* Gui configuration (by count, by age, etc)
-* Save posts before deleting
 
 ## Dependencies
 
@@ -37,8 +32,6 @@ This project depends on
 * NodeJS
 * npm
 
-It's currently in development and not functional.
-
 Install these dependencies using your favourite package-manager:
 
 ````bash
@@ -46,8 +39,6 @@ sudo apt-get install nodejs npm
 ````
 
 ## Using
-
-Ambition is to be fully self explenatory, maybe even as a SaaS.
 
 Current status is that you need to download it, configure it and
 run it yourself.
@@ -75,7 +66,7 @@ nano config.json
 node app.js
 ````
 
-After that, the application should be running in a unconfigured
+After that, the application should be running in an unconfigured
 state. To complete the configuration-process, the application will
 tell you to visit a web-page:
 [http://localhost:8800/](http://localhost:8800/).
