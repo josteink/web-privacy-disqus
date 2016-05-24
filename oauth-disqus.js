@@ -8,16 +8,17 @@ var disqus = function(appKey, appSecret, callbackUrl) {
     self.accessToken = null;
 
     self.getAuthUrl = function() {
-        var result = "https://disqus.com/api/oauth/2.0/authorize/"
-            + "?client_id=" + appKey
-            + "&scope=read,write"
-            + "&response_type=code"
-            + "&redirect_uri=" + callbackUrl;
+        var result = "https://disqus.com/api/oauth/2.0/authorize/" +
+            "?client_id=" + appKey +
+            "&scope=read,write" +
+            "&response_type=code" +
+            "&redirect_uri=" + callbackUrl;
         return result;
     };
 
-    var handleAuthenticationResult = function(error, response, body)
-    {
+    var handleError = function(error, response, body) {
+        //console.log("Error: " + error + "\n" + body + "\n\n");
+
         var errorCarrier = {
             error: error,
             response: response,
@@ -34,9 +35,15 @@ var disqus = function(appKey, appSecret, callbackUrl) {
         {
             throw Error(errorCarrier);
         }
+    };
+
+    var handleAuthenticationResult = function(error, response, body)
+    {
+        handleError(error, response, body);
 
         // requesting new access-token invalidates previous
         // refresh token so we must save the new one!
+        var obj = JSON.parse(body);
         self.refreshToken = obj.refresh_token;
         self.accessToken = obj.access_token;
 
@@ -88,16 +95,14 @@ var disqus = function(appKey, appSecret, callbackUrl) {
             then: function(callback) {
                 callback(self.user.name);
             }
-
-        };;
-
+        };
     };
 
     self.get = function(url, callback) {
         if (url.indexOf("?") != -1) {
-            url += "&"
+            url += "&";
         } else {
-            url += "?"
+            url += "?";
         }
         url += "api_key=" + appKey;
 
@@ -107,14 +112,34 @@ var disqus = function(appKey, appSecret, callbackUrl) {
             }
         };
 
+        //console.log("GET " + url + "); // (bearer " + self.accessToken + ")");
         return req.get(url, options, function(error, response, body) {
-            handleAuthenticationResult(error, response, body);
-            callback(body);
+            handleError(error, response, body);
+            var obj = JSON.parse(body);
+            callback(obj);
         });
     };
 
-    self.post = function(url, options, callback) {
-        // TODO: wrap req.post with auth-headers
+    self.post = function(url, callback) {
+        if (url.indexOf("?") != -1) {
+            url += "&";
+        } else {
+            url += "?";
+        }
+        url += "api_key=" + appKey;
+
+        var options = {
+            'auth': {
+                'bearer': self.accessToken
+            }
+        };
+
+        //console.log("POST " + url);
+        return req.post(url, options, function(error, response, body) {
+            handleError(error, response, body);
+            var obj = JSON.parse(body);
+            callback(obj);
+        });
     };
 };
 

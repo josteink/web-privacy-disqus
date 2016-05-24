@@ -1,3 +1,4 @@
+/* jshint node: true */
 'use strict';
 
 var fs = require('fs');
@@ -70,42 +71,74 @@ function combine(f1, f2) {
 }
 
 function errorHandler(err) {
-    console.log("Error sending request to reddit:");
+    console.log("Error sending request to disqus:");
     console.log(err);
     console.log("Retrying later.");
     scheduleLoop();
 }
 
-function getLastCommentToKeep(user, numToKeep, callback) {
+function getCursorToDeletion(user, numToKeep, callback) {
     // list of comments here https://disqus.com/api/3.0/users/listPosts.json
     // docs here: https://disqus.com/api/docs/users/listPosts/
 
-    return disqus.get("https://disqus.com/api/3.0/users/listPosts.json", function(res) {
-        console.log(res);
-        callback(null);
+    var url = "https://disqus.com/api/3.0/users/listPosts.json?limit=" + numToKeep;
+    disqus.get(url, function(res) {
+        if (!res.cursor.hasNext) {
+            // no comments to delete.
+            scheduleLoop();
+        } else  {
+            console.log("Num posts retrieved: " + res.response.length);
+            callback(res.cursor.next);
+        }
     });
 }
 
-function deleteCommentsFromEntity(comments) {
-    throw Error("Not implemented!");
+function getPostsToDelete(user, numToKeep, callback) {
+    // list of comments here https://disqus.com/api/3.0/users/listPosts.json
+    // docs here: https://disqus.com/api/docs/users/listPosts/
+
+    getCursorToDeletion(user, numToKeep, function(cursor) {
+        var e_cursor = encodeURIComponent(cursor);
+        var url = "https://disqus.com/api/3.0/users/listPosts.json?limit=" + numToKeep + "&cursor=" + e_cursor;
+        disqus.get(url, function(res) {
+            if (!res.cursor.hasNext) {
+                // no comments to delete.
+                scheduleLoop();
+            } else  {
+                callback(res.response);
+            }
+        });
+    });
 }
 
-function deleteComments(user, lastKeepId) {
-    throw Error("Not implemented!");
+function deleteComments(user, numToKeep) {
+    // https://disqus.com/api/docs/posts/remove/
+    getPostsToDelete(user, numToKeep, function(posts) {
+        var postParams = posts.map(function(i) { return "post=" + i.id; });
+        var query = postParams.reduce(function(s,i) {
+            return s + "&" + i;
+        });
+        var url = "https://disqus.com/api/3.0/posts/remove.json?" + query;
+        disqus.post(url, function(res) {
+            console.log("Number of posts deleted: " + res.response.length);
+            scheduleLoop(1000);
+        });
+    });
 }
 
 var user = null;
 
-function scheduleLoop() {
+function scheduleLoop(interval) {
+    if (!interval) {
+        interval = pollInterval;
+    }
     setTimeout(function () {
         runLoop();
-    }, pollInterval);
+    }, interval);
 }
 
 function runLoop() {
-    return getLastCommentToKeep(user, 100, function (lastId) {
-        return deleteComments(user, lastId);
-    });
+    return deleteComments(user, 10);
 }
 
 function runApp() {
