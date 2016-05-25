@@ -148,6 +148,8 @@ function runApp() {
     // Print out stats about the user, that's it.
     disqus.getUserName().then(function (me) {
         user = me;
+        console.log("Logged in as " + user + ".");
+        console.log("Monitoring disqus for posts to delete...");
         return runLoop();
     });
 }
