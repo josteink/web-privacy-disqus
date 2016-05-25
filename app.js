@@ -84,8 +84,7 @@ function getCursorToDeletion(user, numToKeep, callback) {
     var url = "https://disqus.com/api/3.0/users/listPosts.json?limit=" + numToKeep;
     disqus.get(url, function(res) {
         if (!res.cursor.hasNext) {
-            // no comments to delete.
-            scheduleLoop();
+            callback(null);
         } else  {
             console.log("Num posts retrieved: " + res.response.length);
             callback(res.cursor.next);
@@ -98,31 +97,35 @@ function getPostsToDelete(user, numToKeep, callback) {
     // docs here: https://disqus.com/api/docs/users/listPosts/
 
     getCursorToDeletion(user, numToKeep, function(cursor) {
-        var e_cursor = encodeURIComponent(cursor);
-        var url = "https://disqus.com/api/3.0/users/listPosts.json?limit=" + numToKeep + "&cursor=" + e_cursor;
-        disqus.get(url, function(res) {
-            if (!res.cursor.hasNext) {
-                // no comments to delete.
-                scheduleLoop();
-            } else  {
+        if (!cursor) {
+            callback(null);
+        } else {
+            //var e_cursor = encodeURIComponent(cursor);
+            var url = "https://disqus.com/api/3.0/users/listPosts.json?limit=" + numToKeep + "&cursor=" + cursor;
+            disqus.get(url, function(res) {
                 callback(res.response);
-            }
-        });
+            });
+        }
     });
 }
 
 function deleteComments(user, numToKeep) {
     // https://disqus.com/api/docs/posts/remove/
     getPostsToDelete(user, numToKeep, function(posts) {
-        var postParams = posts.map(function(i) { return "post=" + i.id; });
-        var query = postParams.reduce(function(s,i) {
-            return s + "&" + i;
-        });
-        var url = "https://disqus.com/api/3.0/posts/remove.json?" + query;
-        disqus.post(url, function(res) {
-            console.log("Number of posts deleted: " + res.response.length);
-            scheduleLoop(1000);
-        });
+        if (!posts || posts.length === 0) {
+            console.log("Found no posts to delete.");
+            scheduleLoop();
+        } else {
+            var postParams = posts.map(function(i) { return "post=" + i.id; });
+            var query = postParams.reduce(function(s,i) {
+                return s + "&" + i;
+            });
+            var url = "https://disqus.com/api/3.0/posts/remove.json?" + query;
+            disqus.post(url, function(res) {
+                console.log("Number of posts deleted: " + res.response.length);
+                scheduleLoop(1000);
+            });
+        }
     });
 }
 
