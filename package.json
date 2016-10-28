@@ -2,8 +2,9 @@
   "name": "web-privacy-disqus",
   "version": "1.0.0",
   "description": "Cleanse your comment-history automatically and regularly.",
-  "main": "app.js",
+  "main": "index.js",
   "scripts": {
+    "app": "nodejs index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
